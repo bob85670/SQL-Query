@@ -1,0 +1,55 @@
+(a)
+SELECT hash
+FROM Block
+WHERE block_id IN (
+  SELECT prev_id
+  FROM Block
+  GROUP BY prev_id
+  HAVING COUNT(*) > 1
+);
+
+
+(b)
+SELECT Res.trans_id
+FROM (
+  SELECT Tr.trans_id, Tr.amount, SUM(Tok.value)
+  FROM Transaction Tr, InternalTransaction IT, Token Tok
+  WHERE Tr.trans_id = IT.trans_id AND IT.token_id = Tok.token_id GROUP BY Tr.trans_id
+  HAVING SUM(Tok.value) <> Tr.amount) Res
+;
+
+
+(c)
+SELECT IT.internal_id, Tok.value
+FROM Account A, Token Tok, InternalTransaction IT 
+WHERE IT.token_id = Tok.token_id
+  AND A.account_num = Tok.account_num 
+  AND Tok.value < 100
+  AND A.user_name = ‘Alice’;
+
+
+(d)
+SELECT token_id
+  FROM Token
+  WHERE token_id
+  NOT IN (
+    SELECT token_id
+    FROM InternalTransaction
+);
+
+
+(e)
+SELECT A.user_name, COUNT(DISTINCT A.account_num) 
+FROM Account A, Token Tok
+WHERE A.account_num = Tok.account_num
+  AND Tok.value > 100
+GROUP BY A.user_name
+HAVING COUNT(Tok.token_id) >= ALL(
+  SELECT COUNT(Tok.token_id)
+  FROM Account A, Token Tok
+  WHERE A.account_num = Tok.account_num
+    AND Tok.value > 100
+  GROUP BY A.user_name
+);
+
+
